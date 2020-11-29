@@ -191,18 +191,10 @@ def build_model(merge_type, dense_layers, embedding_size):
 
     if merge_type == "concatenate":
         x = concatenate([first_embed, second_embed])
-    elif merge_type == "add":
-        x = add([first_embed, second_embed])
-    elif merge_type == "subtract":
-        x = subtract([first_embed, second_embed])
     elif merge_type == "multiply":
         x = multiply([first_embed, second_embed])
     elif merge_type == "average":
         x = average([first_embed, second_embed])
-    elif merge_type == "maximum":
-        x = maximum([first_embed, second_embed])
-    elif merge_type == "minimum":
-        x = minimum([first_embed, second_embed])
     elif merge_type == "dot":
         x = dot([first_embed, second_embed], axes=1)
 
