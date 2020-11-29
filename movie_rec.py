@@ -55,7 +55,7 @@ merge_types = [
 
 layer_sizes = [[64, 32, 1], [32, 16, 1]]
 
-epochs = 30
+epochs = 2
 
 
 # load and prepare the dataset files
@@ -99,6 +99,7 @@ def load_data(dataset_path):
         usecols=["movie_id", "title", "genres"],
     )
 
+    print("\nLoading data for Movie Lens: Users, Movies, Ratings\n")
     # Shuffling users
     Users = shuffled_ratings["user_emb_id"].values
     print("Users:", Users, ", shape =", Users.shape)
@@ -110,6 +111,8 @@ def load_data(dataset_path):
     # Shuffling ratings
     Ratings = shuffled_ratings["rating"].values
     print("Ratings:", Ratings, ", shape =", Ratings.shape)
+
+    print()
 
     return [Users, Movies], Ratings
 
@@ -145,6 +148,11 @@ def run_experiment(X, y):
 
                 model = build_model(merge_type, layers, embedding_size)
 
+                print("\nModel Summary\n")
+                print("Model Parameters:\n\tmerge layer: {0}\n\tembedding size: {1}\n\tdense layers: {2}".format(merge_type, embedding_size, layers))
+                print("\nSave name: {0}".format(model_name))
+                print(model.summary())
+
                 model.compile(loss="mse", optimizer="adamax")
 
                 # Use 30 epochs, 90% training data, 10% validation data
@@ -169,6 +177,8 @@ def run_experiment(X, y):
                     "{:.4f}".format(math.sqrt(min_val_loss)),
                 )
 
+                print("\nModel Evaluation\n")
+                
                 trained_model = build_model(merge_type, layers, embedding_size)
                 trained_model.load_weights(model_name)
 
@@ -181,7 +191,7 @@ def build_model(merge_type, dense_layers, embedding_size):
     global max_userid
     global max_movieid
 
-    print("build_model: {0}, {1}".format(merge_type, dense_layers))
+    print("build_model: {0}, dense layers: {1}".format(merge_type, dense_layers))
 
     first_input = Input(shape=(1,))
     first_embed = Embedding(max_userid, embedding_size, input_length=1)(first_input)
@@ -202,9 +212,6 @@ def build_model(merge_type, dense_layers, embedding_size):
         x = Dense(layer_size)(x)
 
     model = Model(inputs=[first_input, second_input], outputs=x)
-
-    print("\nModel Summary\n")
-    print(model.summary())
 
     return model
 
