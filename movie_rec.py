@@ -1,6 +1,7 @@
 # Movie Recommender Semester Project for
 # Machine Learning at UTSA Computer Science
 # Josh Greene
+# add your names here
 
 # The blog post below was used as a jumping off point for the project
 # https://towardsdatascience.com/the-4-recommendation-engines-that-can-predict-your-movie-tastes-109dc4e10c52
@@ -55,7 +56,7 @@ merge_types = [
 
 layer_sizes = [[64, 32, 1], [32, 16, 1]]
 
-epochs = 2
+epochs = 30
 
 
 # load and prepare the dataset files
@@ -116,7 +117,9 @@ def load_data(dataset_path):
 
     return [Users, Movies], Ratings
 
-
+# The experiment loops through each of the hyperparameter settings
+# and trains on each configuration.  The same output is generated
+# for each set of hyperparameters, allowing us to compare results.
 def run_experiment(X, y):
     global merge_types
     global embedding_sizes
@@ -141,6 +144,9 @@ def run_experiment(X, y):
 
                 model_name = model_name + ".h5"
 
+                # early stopping allows the model to quit if progress is not being made
+                # in training.
+                # model checkpoint saves the weights of the model for evaluation later.
                 callbacks = [
                     EarlyStopping("val_loss", patience=2),
                     ModelCheckpoint(model_name, save_best_only=True),
@@ -155,7 +161,7 @@ def run_experiment(X, y):
 
                 model.compile(loss="mse", optimizer="adamax")
 
-                # Use 30 epochs, 90% training data, 10% validation data
+                # compile the model and train on it
                 history = model.fit(
                     X,
                     y,
@@ -186,19 +192,24 @@ def run_experiment(X, y):
 
                 get_user_prediction(trained_model)
 
-
+# build model takes the merge type (concat, dot, etc), the number
+# and size of each dense layer, and the embedding size.  It builds
+# and returns a model according to these specifications.
 def build_model(merge_type, dense_layers, embedding_size):
     global max_userid
     global max_movieid
 
     print("build_model: {0}, dense layers: {1}".format(merge_type, dense_layers))
 
+    # build embedding layer for users
     first_input = Input(shape=(1,))
     first_embed = Embedding(max_userid, embedding_size, input_length=1)(first_input)
 
+    # build embedding layer for movies
     second_input = Input(shape=(1,))
     second_embed = Embedding(max_movieid, embedding_size, input_length=1)(second_input)
 
+    # dynamic selection of merge layer type
     if merge_type == "concatenate":
         x = concatenate([first_embed, second_embed])
     elif merge_type == "multiply":
@@ -208,20 +219,22 @@ def build_model(merge_type, dense_layers, embedding_size):
     elif merge_type == "dot":
         x = dot([first_embed, second_embed], axes=1)
 
+    # add a dense layer of specified size
     for layer_size in dense_layers:
         x = Dense(layer_size)(x)
 
+    # build the model
     model = Model(inputs=[first_input, second_input], outputs=x)
 
     return model
 
-
+# predict rating uses a trained moved, movie, and user to make a prediction
 def predict_rating(trained_model, user_id, movie_id):
     return trained_model.predict([np.array([user_id - 1]), np.array([movie_id - 1])])[
         0
     ][0]
 
-
+# prints the user rating and our prediction for top 20 movies
 def get_user_top20(trained_model):
     global ratings
 
@@ -239,7 +252,7 @@ def get_user_top20(trained_model):
         .head(20)
     )
 
-
+# Prints the predicted user ratings for top 20 movies
 def get_user_prediction(trained_model):
     user_ratings = ratings[ratings["user_id"] == TEST_USER][
         ["user_id", "movie_id", "rating"]
@@ -265,6 +278,8 @@ def get_user_prediction(trained_model):
     )
 
 
+# load the dataset
 X, y = load_data(full_dataset_path)
 
+# run the experiment
 run_experiment(X, y)
