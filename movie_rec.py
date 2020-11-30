@@ -26,6 +26,9 @@ from keras.layers import (
 )
 from keras.models import Model, Sequential
 
+# display all columns of a dataframe
+pd.set_option('display.max_columns', None)
+pd.set_option('expand_frame_repr', False)
 
 # Set up global variables
 
